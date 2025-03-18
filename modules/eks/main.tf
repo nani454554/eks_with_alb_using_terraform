@@ -14,8 +14,6 @@ resource "aws_eks_cluster" "eks" {
     Name        = var.eks_cluster_name
     Environment = var.environment
   }
-
-  depends_on = [var.eks_role_arn]
 }
 
 resource "aws_eks_node_group" "nodegroup1" {
@@ -80,48 +78,5 @@ resource "aws_eks_node_group" "nodegroup2" {
 #   }
 
   depends_on = [aws_eks_cluster.eks]
-}
-
-resource "aws_eks_addon" "metrics_server" {
-  cluster_name      = var.eks_cluster_name
-  addon_name        = "eks-pod-identity-agent"
-  addon_version     = "v1.3.5-eksbuild.2" # Check latest version from AWS
-  resolve_conflicts_on_create = "OVERWRITE"
-   resolve_conflicts_on_update = "PRESERVE"
-
-  depends_on = [aws_eks_cluster.eks]
-}
-
-# Fetch Auto Scaling Group Names
-data "aws_autoscaling_groups" "eks_asgs" {
-  names = [
-    aws_eks_node_group.nodegroup1.resources[0].autoscaling_groups[0].name,
-    aws_eks_node_group.nodegroup2.resources[0].autoscaling_groups[0].name
-  ]
-}
-
-data "aws_instances" "eks_nodes" {
-  filter {
-    name   = "tag:eks:nodegroup-name"
-    values = [
-      aws_eks_node_group.nodegroup1.node_group_name,
-      aws_eks_node_group.nodegroup2.node_group_name
-    ]
-  }
-}
-
-
-# data "aws_iam_openid_connect_provider" "eks" {
-#   url = "https://oidc.eks.ap-south-1.amazonaws.com/id/A18800737B868E3B70A8E37F8445236A"
-# }
-
-resource "aws_iam_openid_connect_provider" "eks" {
-  client_id_list  = ["sts.amazonaws.com"]
-  thumbprint_list = [data.tls_certificate.oidc.certificates[0].sha1_fingerprint]
-  url             = aws_eks_cluster.eks.identity[0].oidc[0].issuer
-}
-
-data "tls_certificate" "oidc" {
-  url = aws_eks_cluster.eks.identity[0].oidc[0].issuer
 }
 

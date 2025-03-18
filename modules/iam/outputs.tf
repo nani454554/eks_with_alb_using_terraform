@@ -15,14 +15,7 @@ output "cluster_autoscaler_role_arn" {
   
 }
 
-output "cluster_loadbalancer_role_arn" {
-  description = "IAM role ARN for AWS Load Balancer Controller"
-  value       = aws_iam_role.alb_controller_role.arn
-}
-
-# output "oidc_provider_arn" {
-#   value = aws_iam_openid_connect_provider.eks.arn
+# output "eks_oidc_provider_arn" {
+#   description = "OIDC provider ARN for EKS"
+#   value       = aws_iam_openid_connect_provider.eks.arn
 # }
-
-
-

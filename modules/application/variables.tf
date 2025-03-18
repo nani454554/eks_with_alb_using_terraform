@@ -1,3 +1,5 @@
+variable "cluster_name" {}
+
 terraform {
   required_providers {
      helm = {

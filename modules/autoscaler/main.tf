@@ -1,19 +1,35 @@
+# provider "kubernetes" {
+#   host                   = data.aws_eks_cluster.eks.endpoint
+#   cluster_ca_certificate = base64decode(data.aws_eks_cluster.eks.certificate_authority[0].data)
+#   token                  = data.aws_eks_cluster_auth.eks.token
+# }
+
+# data "aws_eks_cluster" "eks" {
+#   name = var.eks_cluster_id
+# }
+
+# data "aws_eks_cluster_auth" "eks" {
+#   name = var.eks_cluster_id
+# }
+
+
+
 resource "kubernetes_service_account" "cluster_autoscaler" {
   metadata {
-    name      = "cluster-autoscaler-sa"
+    name      = "cluster-autoscaler"
     namespace = "kube-system"
     annotations = {
       "eks.amazonaws.com/role-arn" = var.cluster_autoscaler_role_arn
       # "eks.amazonaws.com/oidc-arn" = var.cluster_autoscaler_oidc_arn
     }
   }
-  # depends_on = [ var.eks_cluster_id ]
+  depends_on = [ var.eks_cluster_id ]
 }
 
 
 resource "kubernetes_cluster_role" "cluster_autoscaler" {
   metadata {
-    name = "cluster-autoscaler-role"
+    name = "cluster-autoscaler"
   }
 
   rule {
@@ -64,7 +80,7 @@ resource "kubernetes_cluster_role" "cluster_autoscaler" {
     verbs      = ["get", "list", "watch"]
   }
 
-  # depends_on = [ var.eks_cluster_id ]
+  depends_on = [ var.eks_cluster_id ]
 }
 
 resource "kubernetes_cluster_role_binding" "cluster_autoscaler" {
@@ -83,7 +99,7 @@ resource "kubernetes_cluster_role_binding" "cluster_autoscaler" {
     name      = kubernetes_service_account.cluster_autoscaler.metadata[0].name
     namespace = "kube-system"
   }
-  # depends_on = [ var.eks_cluster_id ]
+  depends_on = [ var.eks_cluster_id ]
 }
 
 
@@ -147,14 +163,11 @@ resource "kubernetes_deployment" "cluster_autoscaler" {
     }
   }
 
-   depends_on = [ 
+   depends_on = [var.eks_cluster_id,
     kubernetes_service_account.cluster_autoscaler,
     kubernetes_cluster_role_binding.cluster_autoscaler
   ]
 }
-
-
-
 
 
 #  data "tls_certificate" "eks_oidc" {

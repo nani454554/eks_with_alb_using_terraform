@@ -9,8 +9,3 @@ variable "public_subnets" {
 variable "private_subnets" {
   type = list(string)
 }
-
-variable "cluster_name" {
-  description = "Name of the EKS cluster"
-  type        = string
-}

@@ -1,10 +1,18 @@
-data "aws_eks_cluster" "eks" {
-  name = var.cluster_name
-}
+# provider "helm" {
+#   kubernetes {
+#     host                   = var.cluster_endpoint
+#     token                  = data.aws_eks_cluster_auth.eks.token
+#     cluster_ca_certificate = base64decode(data.aws_eks_cluster.eks.certificate_authority[0].data)
+#   }
+# }
 
-data "aws_eks_cluster_auth" "eks" {
-  name = var.cluster_name
-}
+# data "aws_eks_cluster" "eks" {
+#   name = var.cluster_name
+# }
+
+# data "aws_eks_cluster_auth" "eks" {
+#   name = var.cluster_name
+# }
 
 resource "helm_release" "nginx_ingress" {
   name             = "nginx-ingress"
@@ -20,13 +28,11 @@ controller:
   service:
     type: LoadBalancer
     annotations:
-      service.beta.kubernetes.io/aws-load-balancer-type: "nlb"
+      service.beta.kubernetes.io/aws-load-balancer-type: "external"
       service.beta.kubernetes.io/aws-load-balancer-scheme: "internet-facing"
-      service.beta.kubernetes.io/aws-load-balancer-nlb-target-type: "instance"  # Use "instance" if using worker node security groups
-      service.beta.kubernetes.io/aws-load-balancer-healthcheck-port: "traffic-port"
-      service.beta.kubernetes.io/aws-load-balancer-healthcheck-protocol: "TCP"
-      service.beta.kubernetes.io/aws-load-balancer-cross-zone-load-balancing-enabled: "true"
-      externalTrafficPolicy: Local
+      service.beta.kubernetes.io/aws-load-balancer-nlb-target-type: "ip"
+      service.beta.kubernetes.io/aws-load-balancer-healthcheck-port: "80"
+    externalTrafficPolicy: Local
   EOF
   ]
 }

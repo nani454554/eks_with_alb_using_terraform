@@ -1,0 +1,18 @@
+apiVersion: argoproj.io/v1alpha1
+kind: Application
+metadata:
+  name: elk-stack
+  namespace: argocd
+spec:
+  project: default
+  source:
+    repoURL: https://helm.elastic.co
+    targetRevision: 7.17.3
+    chart: elasticsearch
+  destination:
+    server: https://kubernetes.default.svc
+    namespace: elk
+  syncPolicy:
+    automated:
+      prune: true
+      selfHeal: true

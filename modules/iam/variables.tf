@@ -17,11 +17,8 @@ variable "aws_account_id" {
   default = "942788320122"
 }
 
-# variable "oidc_provider" {
-#   description = "OIDC provider for EKS"
-#   type        = string
-#   default = ""
-# }
-
-variable "oidc_issuer_url" {}
-variable "oidc_provider_arn" {}
+variable "oidc_provider" {
+  description = "OIDC provider for EKS"
+  type        = string
+  default = "https://oidc.eks.ap-south-1.amazonaws.com/id/45AFF6AA88AF3E7F20350010C93A0792"
+}

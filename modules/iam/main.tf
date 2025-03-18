@@ -43,20 +43,20 @@ resource "aws_iam_role" "eks_node_role" {
           Service = "ec2.amazonaws.com"
         }
         Action = "sts:AssumeRole"
-      }
+      },
 
-      # {
-      #   Effect = "Allow"
-      #   Principal = {
-      #     Federated = aws_iam_openid_connect_provider.eks.arn
-      #   }
-      #   Action = "sts:AssumeRoleWithWebIdentity"
-      #   Condition = {
-      #     StringEquals = {
-      #       "${aws_iam_openid_connect_provider.eks.url}:sub" = "system:serviceaccount:kube-system:cluster-autoscaler-sa"
-      #     }
-      #   }
-      # }
+      {
+        Effect = "Allow"
+        Principal = {
+          Federated = "arn:aws:iam::${var.aws_account_id}:oidc-provider/${var.oidc_provider}"
+        }
+        Action = "sts:AssumeRoleWithWebIdentity"
+        Condition = {
+          StringEquals = {
+            "${var.oidc_provider}:sub" = "system:serviceaccount:kube-system:cluster-autoscaler"
+          }
+        }
+      }
 
     ]
   })
@@ -104,17 +104,12 @@ resource "aws_iam_role" "cluster_autoscaler" {
 
   assume_role_policy = jsonencode({
     Version = "2012-10-17"
-     Statement = [{
+    Statement = [{
       Effect = "Allow"
       Principal = {
-        Federated = var.oidc_provider_arn
+        Service = "eks.amazonaws.com"
       }
-      Action = "sts:AssumeRoleWithWebIdentity"
-      Condition = {
-        StringEquals = {
-          "${var.oidc_issuer_url}:sub" = "system:serviceaccount:kube-system:cluster-autoscaler-sa"
-        }
-      }
+      Action = "sts:AssumeRole"
     }]
   })
 }
@@ -153,72 +148,6 @@ resource "aws_iam_role_policy_attachment" "cluster_autoscaler_attach" {
 
 
 
-# Create IAM Role for ALB Controller
-resource "aws_iam_role" "alb_controller_role" {
-  name = "AmazonEKSLoadBalancerControllerRole"
-  assume_role_policy = jsonencode({
-    Version = "2012-10-17"
-    Statement = [{
-      Effect = "Allow"
-      Principal = {
-        Federated = var.oidc_provider_arn
-      }
-      Action = "sts:AssumeRoleWithWebIdentity"
-      Condition = {
-        StringEquals = {
-          "${var.oidc_issuer_url}:sub" = "system:serviceaccount:kube-system:aws-load-balancer-controller"
-        }
-      }
-    }]
-  })
-}
-
-
-resource "aws_iam_policy" "eks_aws_lb_controller_policy" {
-  name        = "eks-aws-lb-controller-policy"
-  description = "IAM policy for AWS Load Balancer Controller"
-
-  policy = jsonencode({
-    Version = "2012-10-17"
-    Statement = [{
-      Effect   = "Allow"
-      Action   = [
-        "elasticloadbalancing:CreateLoadBalancer",
-        "elasticloadbalancing:DeleteLoadBalancer",
-        "elasticloadbalancing:DescribeLoadBalancers",
-        "elasticloadbalancing:ModifyLoadBalancerAttributes"
-      ]
-      Resource = "*"
-    }]
-  })
-}
-
-# Attach AWS-Managed ALB Controller Policies
-resource "aws_iam_policy_attachment" "alb_controller_attach" {
-  name       = "ALBControllerPolicyAttachment"
-  roles      = [aws_iam_role.alb_controller_role.name]
-  policy_arn = aws_iam_policy.eks_aws_lb_controller_policy.arn
-}
-
-
-# resource "aws_iam_openid_connect_provider" "eks" {
-#   client_id_list  = ["sts.amazonaws.com"]
-#   thumbprint_list = [data.tls_certificate.oidc.certificates[0].sha1_fingerprint]
-#   url             = var.oidc_issuer_url
-# }
-
-# data "tls_certificate" "oidc" {
-#   url = var.oidc_issuer_url
-# }
-
-
-
-
-# data "aws_iam_openid_connect_provider" "eks" {
-#   arn = var.oidc_provider_arn
-# }
-
-
 
 # data "aws_eks_cluster" "eks" {
 #   name = var.eks_cluster_id
@@ -229,6 +158,4 @@ resource "aws_iam_policy_attachment" "alb_controller_attach" {
 #   client_id_list  = ["sts.amazonaws.com"]
 #   thumbprint_list = [data.tls_certificate.eks_oidc.certificates[0].sha1_fingerprint]
 # }
-
-
 
